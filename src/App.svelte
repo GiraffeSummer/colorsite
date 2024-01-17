@@ -4,20 +4,29 @@
   import ColorPicker from "svelte-awesome-color-picker";
   import { writable } from "svelte/store";
 
-  let hex, rgb, color, hsv;
-  hex = loadLocalStorage("color") || "#ffffff";
+  let hex: string = loadLocalStorage("color") || "#ffffff";
   const isFullScreen = writable(document.fullscreenElement != null);
-
+  let fullscreenElement;
   function changeColor() {
-    window.document.body.style.backgroundColor = hex;
+    fullscreenElement = document.getElementById("fullscreen");
+    fullscreenElement.style.backgroundColor = hex;
     saveLocalStorage("color", hex);
   }
 
-  onMount(changeColor);
+  onMount(() => {
+    changeColor();
+    fullscreenElement.addEventListener(
+      "fullscreenchange",
+      (e) => {
+        $isFullScreen = document.fullscreenElement != null;
+      },
+      false,
+    );
+  });
 
   function toggleFullScreen() {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
+      fullscreenElement.requestFullscreen();
     } else if (document.exitFullscreen) {
       document.exitFullscreen();
     }
@@ -29,67 +38,61 @@
     let promise;
     if (keycode == "F11") {
       e.preventDefault();
-      console.log("f11 pressed");
       if (!document.fullscreenElement) {
-        promise = document.documentElement.requestFullscreen();
+        promise = fullscreenElement.requestFullscreen();
       }
     } else if (keycode == "Escape") {
-      console.log("escape");
       if (document.fullscreenElement && document.exitFullscreen) {
         promise = document.exitFullscreen();
       }
     }
-    if (promise) {
-      promise
-        .then(() => {})
-        .catch((e) => {
-          console.log(e);
-        });
-    }
+
+    promise?.then(() => {});
   }
-  document.documentElement.addEventListener(
-    "fullscreenchange",
-    (e) => {
-      $isFullScreen = document.fullscreenElement != null;
-    },
-    false,
-  );
 </script>
 
 <svelte:body on:keydown={handleKey} />
-<main>
+<main style="background-color: {hex};">
+  <div id="fullscreen" style="width: 100%; height: 100%;"></div>
   {#if !$isFullScreen}
-    <div class="grid">
-      <div></div>
+    <div class="grid container">
+      <div />
       <article>
         <ColorPicker
           on:input={changeColor}
           bind:hex
-          bind:rgb
-          bind:hsv
-          bind:color
           isDialog={false}
           isAlpha={false}
           --picker-width={"18vw"}
         />
-        <button
-          style="margin-top: 3vh; margin-bottom:0vh;"
-          class="secondary outline"
-          on:click={toggleFullScreen}>Fullscreen</button
+        <div class="grid" style="margin: 1vh 0">
+          <button
+            class="secondary outline"
+            style="background-color: black;"
+            on:click={() => {
+              hex = "#000000";
+            }}
+          ></button>
+          <button
+            class="secondary outline"
+            style="background-color: white;"
+            on:click={() => {
+              hex = "#ffffff";
+            }}
+          ></button>
+          <button
+            class="secondary outline"
+            style="background-color: #00ff00;"
+            on:click={() => {
+              hex = "#00ff00";
+            }}
+          ></button>
+        </div>
+        <button class="secondary outline" style="margin-bottom: 0;" on:click={toggleFullScreen}
+          >Fullscreen <small>(F11)</small></button
         >
       </article>
-      <div></div>
+      <div />
     </div>
   {/if}
 </main>
-
-<style>
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --cp-bg-color: #333;
-      --cp-border-color: white;
-      --cp-input-color: #555;
-      --cp-button-hover-color: #777;
-    }
-  }
-</style>

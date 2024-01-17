@@ -1,0 +1,8 @@
+@media (prefers-color-scheme: dark) {
+    :root {
+        --cp-bg-color: #333;
+        --cp-border-color: white;
+        --cp-input-color: #555;
+        --cp-button-hover-color: #777;
+    }
+}
