@@ -4,11 +4,14 @@
   import ColorPicker from "svelte-awesome-color-picker";
   import { writable } from "svelte/store";
 
+  const colorpresets = ["#000000", "#ffffff", "#00ff00"];
+
   let hex: string = loadLocalStorage("color") || "#ffffff";
   const isFullScreen = writable(document.fullscreenElement != null);
-  let fullscreenElement;
+
+  let fullscreenElement: HTMLElement;
   function changeColor() {
-    fullscreenElement = document.getElementById("fullscreen");
+    fullscreenElement = document.getElementById("fullscreen") as HTMLElement;
     fullscreenElement.style.backgroundColor = hex;
     saveLocalStorage("color", hex);
   }
@@ -33,7 +36,7 @@
     $isFullScreen = document.fullscreenElement != null;
   }
 
-  function handleKey(e) {
+  function handleKey(e: KeyboardEvent) {
     const keycode = e.code;
     let promise;
     if (keycode == "F11") {
@@ -54,6 +57,7 @@
 <svelte:body on:keydown={handleKey} />
 <main style="background-color: {hex};">
   <div id="fullscreen" style="width: 100%; height: 100%;"></div>
+
   {#if !$isFullScreen}
     <div class="grid container">
       <div />
@@ -66,31 +70,23 @@
           --picker-width={"18vw"}
         />
         <div class="grid" style="margin: 1vh 0">
-          <button
-            class="secondary outline"
-            style="background-color: black;"
-            on:click={() => {
-              hex = "#000000";
-            }}
-          ></button>
-          <button
-            class="secondary outline"
-            style="background-color: white;"
-            on:click={() => {
-              hex = "#ffffff";
-            }}
-          ></button>
-          <button
-            class="secondary outline"
-            style="background-color: #00ff00;"
-            on:click={() => {
-              hex = "#00ff00";
-            }}
-          ></button>
+          {#each colorpresets as color}
+            <button
+              class="secondary outline"
+              style="background-color: {color};"
+              on:click={() => {
+                hex = color;
+              }}
+            />
+          {/each}
         </div>
-        <button class="secondary outline" style="margin-bottom: 0;" on:click={toggleFullScreen}
-          >Fullscreen <small>(F11)</small></button
+        <button
+          class="secondary outline"
+          style="margin-bottom: 0;"
+          on:click={toggleFullScreen}
         >
+          Fullscreen <small>(F11)</small>
+        </button>
       </article>
       <div />
     </div>
