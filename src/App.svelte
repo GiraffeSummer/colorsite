@@ -11,12 +11,12 @@
 
   let fullscreenElement: HTMLElement;
   function changeColor() {
-    fullscreenElement = document.getElementById("fullscreen") as HTMLElement;
     fullscreenElement.style.backgroundColor = hex;
     saveLocalStorage("color", hex);
   }
 
   onMount(() => {
+    fullscreenElement = document.getElementById("fullscreen") as HTMLElement;
     changeColor();
     fullscreenElement.addEventListener(
       "fullscreenchange",
