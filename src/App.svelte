@@ -4,20 +4,32 @@
   import ColorPicker from "svelte-awesome-color-picker";
   import { writable } from "svelte/store";
 
-  const colorpresets = ["#000000", "#ffffff", "#00ff00"];
-
+  let historyTimer: number;
   let hex: string = loadLocalStorage("color") || "#ffffff";
   const isFullScreen = writable(document.fullscreenElement != null);
 
   let fullscreenElement: HTMLElement;
-  function changeColor() {
+  let historyHex: string[] = loadLocalStorage("history") || [
+    "#000000",
+    "#ffffff",
+    "#00ff00",
+  ];
+  function changeColor(e) {
     fullscreenElement.style.backgroundColor = hex;
+    document.body.style.backgroundColor = hex;
+    clearTimeout(historyTimer);
+    historyTimer = setTimeout(function () {
+      if (!historyHex.includes(hex)) {
+        if (historyHex.length > 3) historyHex.shift();
+        historyHex = [...historyHex, e.detail.hex];
+        saveLocalStorage("history", historyHex);
+      }
+    }, 200);
     saveLocalStorage("color", hex);
   }
 
   onMount(() => {
-    fullscreenElement = document.getElementById("fullscreen") as HTMLElement;
-    changeColor();
+    changeColor({ detail: { hex } });
     fullscreenElement.addEventListener(
       "fullscreenchange",
       (e) => {
@@ -55,24 +67,23 @@
 </script>
 
 <svelte:body on:keydown={handleKey} />
-<main style="background-color: {hex};">
-  <div id="fullscreen" style="width: 100%; height: 100%;"></div>
+<main class="grid content-center justify-items-center gap-4">
+  <div id="fullscreen" bind:this={fullscreenElement}></div>
 
   {#if !$isFullScreen}
-    <div class="grid container">
-      <div />
-      <article>
+  <div></div>
+    <div class="card w-80 bg-base-100 shadow-xl">
+      <div class="card-body">
         <ColorPicker
           on:input={changeColor}
           bind:hex
           isDialog={false}
           isAlpha={false}
-          --picker-width={"18vw"}
         />
-        <div class="grid" style="margin: 1vh 0">
-          {#each colorpresets as color}
+        <div class="grid justify-center grid-flow-col gap-3">
+          {#each historyHex as color}
             <button
-              class="secondary outline"
+              class="btn w-12 col-span-1"
               style="background-color: {color};"
               on:click={() => {
                 hex = color;
@@ -80,15 +91,12 @@
             />
           {/each}
         </div>
-        <button
-          class="secondary outline"
-          style="margin-bottom: 0;"
-          on:click={toggleFullScreen}
-        >
+        <button class="btn" on:click={toggleFullScreen}>
           Fullscreen <small>(F11)</small>
         </button>
-      </article>
+      </div>
       <div />
     </div>
+    <div></div>
   {/if}
 </main>
