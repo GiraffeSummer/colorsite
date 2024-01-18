@@ -13,6 +13,7 @@
     "#000000",
     "#ffffff",
     "#00ff00",
+    "#0000ff",
   ];
   function changeColor(e) {
     fullscreenElement.style.backgroundColor = hex;
@@ -68,10 +69,10 @@
 
 <svelte:body on:keydown={handleKey} />
 <main class="grid content-center justify-items-center gap-4">
-  <div id="fullscreen" bind:this={fullscreenElement}></div>
+  <div id="fullscreen" class="cursor-none" bind:this={fullscreenElement}></div>
 
   {#if !$isFullScreen}
-  <div></div>
+    <div></div>
     <div class="card w-80 bg-base-100 shadow-xl">
       <div class="card-body">
         <ColorPicker
