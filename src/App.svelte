@@ -1,40 +1,45 @@
 <script lang="ts">
-  import { loadLocalStorage, saveLocalStorage } from "./lib/lib";
-  import { onMount } from "svelte";
-  import ColorPicker from "svelte-awesome-color-picker";
-  import { writable } from "svelte/store";
+  import { onMount } from 'svelte';
+  import { loadLocalStorage, saveLocalStorage } from './lib/lib';
+  import ColorPicker from 'svelte-awesome-color-picker';
+  import ColorButton from './components/ColorButton.svelte';
 
   let historyTimer: number;
-  let hex: string = loadLocalStorage("color") || "#ffffff";
-  const isFullScreen = writable(document.fullscreenElement != null);
+  let hex: string = $state(loadLocalStorage('color') || '#ffffff');
+  let isFullScreen = $state(document.fullscreenElement != null);
+  let fullscreenElement: HTMLElement | undefined = $state<HTMLElement>();
 
-  let fullscreenElement: HTMLElement;
-  let historyHex: string[] = loadLocalStorage("history") || [
-    "#000000",
-    "#ffffff",
-    "#00ff00",
-    "#0000ff",
-  ];
-  function changeColor(e) {
-    fullscreenElement.style.backgroundColor = hex;
+  const defaultArray: string[] = ['#000000', '#ffffff', '#00ff00', '#0000ff'];
+
+  let historyHex: { color: string }[] = $state(
+    loadLocalStorage('history') ||
+      defaultArray.map((c) => {
+        color: c;
+      }),
+  );
+
+  function changeColor(e: any) {
+    if (fullscreenElement) {
+      fullscreenElement.style.backgroundColor = hex;
+    }
     document.body.style.backgroundColor = hex;
     clearTimeout(historyTimer);
     historyTimer = setTimeout(function () {
-      if (!historyHex.includes(hex)) {
-        if (historyHex.length > 3) historyHex.shift();
-        historyHex = [...historyHex, e.detail.hex];
-        saveLocalStorage("history", historyHex);
+      if (!historyHex.every((h) => h.color == e.detail.hex)) {
+        if (historyHex.length > 3) historyHex.pop();
+        historyHex = [{ color: e.detail.hex }, ...historyHex];
+        saveLocalStorage('history', historyHex);
       }
     }, 200);
-    saveLocalStorage("color", hex);
+    saveLocalStorage('color', hex);
   }
 
   onMount(() => {
     changeColor({ detail: { hex } });
-    fullscreenElement.addEventListener(
-      "fullscreenchange",
-      (e) => {
-        $isFullScreen = document.fullscreenElement != null;
+    fullscreenElement?.addEventListener(
+      'fullscreenchange',
+      (e: any) => {
+        isFullScreen = document.fullscreenElement != null;
       },
       false,
     );
@@ -42,22 +47,25 @@
 
   function toggleFullScreen() {
     if (!document.fullscreenElement) {
-      fullscreenElement.requestFullscreen();
+      fullscreenElement?.requestFullscreen();
     } else if (document.exitFullscreen) {
       document.exitFullscreen();
     }
-    $isFullScreen = document.fullscreenElement != null;
+    isFullScreen = document.fullscreenElement != null;
   }
 
   function handleKey(e: KeyboardEvent) {
     const keycode = e.code;
     let promise;
-    if (keycode == "F11") {
+    if (!isFullScreen && keycode == 'F11') {
       e.preventDefault();
       if (!document.fullscreenElement) {
-        promise = fullscreenElement.requestFullscreen();
+        promise = fullscreenElement?.requestFullscreen().catch(() => {
+          //make notification that fullscreen not supported
+        });
       }
-    } else if (keycode == "Escape") {
+    } else if (['F11', 'Escape'].includes(keycode)) {
+      e.preventDefault();
       if (document.fullscreenElement && document.exitFullscreen) {
         promise = document.exitFullscreen();
       }
@@ -67,11 +75,11 @@
   }
 </script>
 
-<svelte:body on:keydown={handleKey} />
+<svelte:body onkeydown={handleKey} />
 <main class="grid content-center justify-items-center gap-4">
   <div id="fullscreen" class="cursor-none" bind:this={fullscreenElement}></div>
 
-  {#if !$isFullScreen}
+  {#if !isFullScreen}
     <div></div>
     <div class="card w-80 bg-base-100 shadow-xl">
       <div class="card-body">
@@ -83,20 +91,22 @@
         />
         <div class="grid justify-center grid-flow-col gap-3">
           {#each historyHex as color}
-            <button
-              class="btn w-12 col-span-1"
-              style="background-color: {color};"
-              on:click={() => {
-                hex = color;
-              }}
+            <ColorButton
+              color={color.color}
+              onClick={() => (hex = color.color)}
             />
           {/each}
         </div>
-        <button class="btn" on:click={toggleFullScreen}>
+        <div class="grid justify-center grid-flow-col gap-3">
+          {#each defaultArray as color}
+            <ColorButton {color} onClick={() => (hex = color)} />
+          {/each}
+        </div>
+        <button class="btn" onclick={toggleFullScreen}>
           Fullscreen <small>(F11)</small>
         </button>
       </div>
-      <div />
+      <div></div>
     </div>
     <div></div>
   {/if}
